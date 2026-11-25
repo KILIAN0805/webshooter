@@ -1,6 +1,10 @@
 [
  {
-  "name": "Webshooter MK1",
-  "file": "modelle/webshooter-mk1.json"
+  "name": "Webshooter MK1 mit Schrauben",
+  "file": "modelle/webshooter-mk1-mit-schrauben.json"
+ },
+ {
+  "name": "Webshooter MK1 ohne Schrauben",
+  "file": "modelle/webshooter-mk1-ohne-schrauben.json"
  }
 ]

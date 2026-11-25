@@ -143,7 +143,10 @@ const BASE=[
  {id:'sachse',grp:'K',name:'Schraube Achse M3×8',count:'2×',col:STEEL,ord:4,txt:['Linsenkopf (ISO 7380). Achse des Abzugs, schneidet sich ins Plastik der Halterung.'],print:'Kaufteil'},
  {id:'svorn',grp:'K',name:'Schraube Lasche vorne M3×5',count:'2×',col:STEEL,ord:4,txt:['Linsenkopf. Durch die Wange in die Lasche.'],print:'Kaufteil'},
  {id:'shint',grp:'K',name:'Schraube Lasche hinten M3×8',count:'2×',col:STEEL,ord:4,txt:['Linsenkopf. Durch die Lasche in den Schieber.'],print:'Kaufteil'},
- {id:'pin',grp:'K',name:'Scharnierstift',count:'1×',col:STEEL,ord:4,txt:['Stück 1,75-mm-Filament, ca. 11 cm. Hält die Unterschale am Scharnier.'],print:'Filament-Rest'}];
+ {id:'pachse',grp:'K',name:'Steckstift Achse',count:'2×',col:MECH,ord:4,txt:['Gedruckter Stift statt Schraube: Schaft 3,0 mm, 8 mm lang, Kopf 5,7 mm.','Dreht sich frei im Abzug und sitzt stramm (Presssitz) in der Halterung. Die Haube liegt direkt vor dem Kopf, dadurch kann er nicht herausrutschen.'],print:'PETG, liegend auf der flachen Seite'},
+ {id:'pvorn',grp:'K',name:'Steckstift Lasche vorne',count:'2×',col:MECH,ord:4,txt:['Gedruckter Stift, 3,0 mm, 5 mm lang. Durch die Wange des Abzugs, stramm in die Lasche.'],print:'PETG, liegend auf der flachen Seite'},
+ {id:'phint',grp:'K',name:'Steckstift Lasche hinten',count:'2×',col:MECH,ord:4,txt:['Gedruckter Stift, 3,0 mm, 8 mm lang. Durch die Lasche, stramm in den Schieber.'],print:'PETG, liegend auf der flachen Seite'},
+ {id:'pin',grp:'K',name:'Scharnierstift (Filament)',count:'1×',col:STEEL,ord:4,txt:['Ein Stück normales 3D-Drucker-Filament, kein Metall: 1,75 mm dick, ca. 11 cm lang (PLA oder PETG).','Durch alle Scharnierglieder der Unterschale schieben. Damit er nicht rausrutscht, beide Enden kurz mit einem Lötkolben oder Feuerzeug anwärmen und etwas platt drücken.'],print:'Filament 1,75 mm, ca. 11 cm'}];
 let PARTS=BASE.slice();let byId=Object.fromEntries(PARTS.map(p=>[p.id,p]));
 const stage=document.getElementById('stage');
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
@@ -187,12 +190,14 @@ function loadPackage(D,label){clearAll();PARTS=BASE.slice();byId=Object.fromEntr
  abz=add('abzug',G.abzug,null,{base:V(K.PIV_X,0,K.PIV_Z),eI:V(56,0,-20),eG:V(52,0,-18),mov:'rot'});
  for(const s of [1,-1]){
   add('lasche',G.lasche,null,{eI:V(0,s*44,24),eG:V(-36,0,46),mov:'link',s});
-  add('sachse',G.screw8,null,{base:V(K.PIV_X,s*K.CH1,K.PIV_Z),eI:V(56,s*36,-20),eG:V(52,0,-18),rz:s<0?Math.PI:0});
-  add('svorn',G.screw5,abz.g,{base:V(0,s*K.CH1,K.LINK_Z-K.PIV_Z),eI:V(0,s*32,0),eG:V(0,0,0),rz:s<0?Math.PI:0});
-  add('shint',G.screw8,sch.g,{base:V(K.X_PIN,s*(K.LK1),K.LINK_Z),eI:V(0,s*34,0),eG:V(0,0,0),rz:s<0?Math.PI:0});
+  const st=!!G.stift8;
+  add(st?'pachse':'sachse',st?G.stift8:G.screw8,null,{base:V(K.PIV_X,s*K.CH1,K.PIV_Z),eI:V(56,s*36,-20),eG:V(52,0,-18),rz:s<0?Math.PI:0});
+  add(st?'pvorn':'svorn',st?G.stift5:G.screw5,abz.g,{base:V(0,s*K.CH1,K.LINK_Z-K.PIV_Z),eI:V(0,s*32,0),eG:V(0,0,0),rz:s<0?Math.PI:0});
+  add(st?'phint':'shint',st?G.stift8:G.screw8,sch.g,{base:V(K.X_PIN,s*(K.LK1),K.LINK_Z),eI:V(0,s*34,0),eG:V(0,0,0),rz:s<0?Math.PI:0});
  }
  const h0=V(...K.hinge[0]),h1=V(...K.hinge[1]),hd=h1.clone().sub(h0).normalize();
  add('pin',G.pin,null,{eI:hd.clone().multiplyScalar(-95).add(V(0,-26,-62)),eG:V(0,-10,-62)});
+ PARTS=BASE.filter(p=>items.some(i=>i.part===p.id));byId=Object.fromEntries(BASE.map(p=>[p.id,p]));
  HOME=V(-25,8,0);homeDist=470;
  afterLoad(label||'Webshooter','abzug',false)}
 function afterLoad(label,first,custom){
@@ -244,7 +249,7 @@ const GH={owner:'KILIAN0805',repo:'webshooter',path:'modelle'};   // Ort der Mod
 function listFromGitHub(){if(!/github\.io$/i.test(location.hostname))return Promise.reject();
  return fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`,{cache:'no-store'}).then(r=>{if(!r.ok)throw 0;return r.json()})
   .then(a=>{const l=a.filter(f=>/\.(json|stl|obj|glb)$/i.test(f.name)&&f.name!=='liste.json').map(f=>({name:pretty(f.name),file:GH.path+'/'+f.name}));if(!l.length)throw 0;return l})}
-function pretty(f){return f.replace(/\.[^.]+$/,'').replace(/[-_]+/g,' ').replace(/\bmk(\d+)/i,'MK$1').replace(/^./,c=>c.toUpperCase())}
+function pretty(f){return f.replace(/\.[^.]+$/,'').split(/[-_ ]+/).map(w=>/^mk\d+$/i.test(w)?w.toUpperCase():/^(mit|ohne|und|v\d+)$/i.test(w)?w.toLowerCase():w.charAt(0).toUpperCase()+w.slice(1)).join(' ')}
 function listFromManifest(){return fetch('modelle/liste.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw 0;return r.json()})}
 function natural(a,b){return a.name.localeCompare(b.name,'de',{numeric:true})}
 function fillPicker(list){MODELS=list.sort(natural);
@@ -258,7 +263,7 @@ function openModel(m){const note=document.getElementById('srcNote');note.textCon
    if(!d.geo||!d.k)throw 0;loadPackage(d,m.name)})
   .catch(()=>{note.textContent=m.name+' konnte nicht geladen werden.';if(ld)ld.textContent='Modell konnte nicht geladen werden.'})}
 pickEl.onchange=()=>{const m=MODELS.find(x=>x.file===pickEl.value);if(m){openModel(m);try{history.replaceState(null,'','#'+m.file.split('/').pop().replace(/\.[^.]+$/,''))}catch(e){}}};
-listFromGitHub().catch(()=>listFromManifest()).catch(()=>[{name:'Webshooter MK1',file:'modelle/webshooter-mk1.json'}])
+listFromGitHub().catch(()=>listFromManifest()).catch(()=>[{name:'Webshooter MK1 ohne Schrauben',file:'modelle/webshooter-mk1-ohne-schrauben.json'},{name:'Webshooter MK1 mit Schrauben',file:'modelle/webshooter-mk1-mit-schrauben.json'}])
  .then(list=>{fillPicker(list);const want=decodeURIComponent(location.hash.slice(1));
   const pk=MODELS.filter(m=>/\.json$/i.test(m.file));
   const first=(want&&MODELS.find(m=>m.file.split('/').pop().replace(/\.[^.]+$/,'')===want))||pk[pk.length-1]||MODELS[MODELS.length-1];
@@ -291,6 +296,7 @@ document.getElementById('iso').onclick=e=>{isolate=!isolate;e.currentTarget.setA
 const GROUPS=[['E','Eigene Dateien','importiert'],['G','Gehäuse','drucken'],['M','Mechanik','drucken'],['K','Kleinteile','kaufen'],['P','Platzhalter','nicht drucken']];
 function buildList(){const box=document.getElementById('list');
  box.innerHTML=GROUPS.map(([g,t,h])=>{const ps=PARTS.filter(p=>p.grp===g);if(!ps.length)return '';
+  if(g==='K')h=ps.some(p=>p.id==='pachse')?'drucken + Filament':'kaufen + Filament';
   return `<div class="grp"><h4>${t}<span>${h}</span></h4><ul>`+ps.map(p=>`<li tabindex="0" data-id="${p.id}"><span class="dot" style="background:#${p.col.toString(16).padStart(6,'0')}"></span><span class="nm">${p.name}</span><span class="ct">${p.count}</span><button aria-label="Ein- oder ausblenden">◐</button></li>`).join('')+'</ul></div>'}).join('');
  box.querySelectorAll('li').forEach(li=>{const id=li.dataset.id;
   li.onclick=()=>select(id);li.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select(id)}};
