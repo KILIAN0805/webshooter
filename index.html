@@ -258,7 +258,7 @@ function openModel(m){const note=document.getElementById('srcNote');note.textCon
    if(!d.geo||!d.k)throw 0;loadPackage(d,m.name)})
   .catch(()=>{note.textContent=m.name+' konnte nicht geladen werden.';if(ld)ld.textContent='Modell konnte nicht geladen werden.'})}
 pickEl.onchange=()=>{const m=MODELS.find(x=>x.file===pickEl.value);if(m){openModel(m);try{history.replaceState(null,'','#'+m.file.split('/').pop().replace(/\.[^.]+$/,''))}catch(e){}}};
-listFromGitHub().catch(()=>listFromManifest()).catch(()=>[{name:'Webshooter MK4',file:'modelle/webshooter-mk4.json'}])
+listFromGitHub().catch(()=>listFromManifest()).catch(()=>[{name:'Webshooter MK1',file:'modelle/webshooter-mk1.json'}])
  .then(list=>{fillPicker(list);const want=decodeURIComponent(location.hash.slice(1));
   const pk=MODELS.filter(m=>/\.json$/i.test(m.file));
   const first=(want&&MODELS.find(m=>m.file.split('/').pop().replace(/\.[^.]+$/,'')===want))||pk[pk.length-1]||MODELS[MODELS.length-1];
