@@ -82,13 +82,6 @@ button:focus-visible,input:focus-visible,li:focus-visible{outline:2px solid var(
       <h2>Modell</h2>
       <select id="pick" aria-label="Modell auswählen"></select>
       <p class="note" id="srcNote"></p>
-      <div class="row">
-        <label class="btn" for="file" style="display:inline-flex;align-items:center">Datei öffnen</label>
-        <input id="file" type="file" multiple accept=".json,.stl,.obj,.glb,.gltf">
-        <button class="btn" id="flip" hidden>Um 90° kippen</button>
-
-      </div>
-      <p class="note">Neue Modelle legst du einfach in den Ordner „modelle“ im GitHub-Repo, dann erscheinen sie oben in der Auswahl. Webshooter-Pakete (.json) von Claude laufen mit allen Funktionen. Eigene Teile als STL, OBJ oder GLB, gern mehrere auf einmal (zum Beispiel jedes Teil einzeln aus Shapr3D exportiert): Dann gehen Explosion, Detailansicht und Ausblenden, aber kein Abzug. Du kannst Dateien auch aufs Bild ziehen.</p>
     </div>
     <div class="views">
       <button data-v="iso">Schräg</button><button data-v="side">Seite</button>
@@ -118,6 +111,16 @@ button:focus-visible,input:focus-visible,li:focus-visible{outline:2px solid var(
       <button class="btn" id="anim">Animation abspielen</button>
     </div>
     <p class="note">Das Sprühbild ist eine Veranschaulichung. Die echte Pumpe gibt pro Druck einen Sprühstoß ab, sobald der Kopf weit genug eingedrückt ist. Flasche und Sprühkopf sind nur Platzhalter und werden nicht gedruckt.</p>
+    <div class="load">
+      <h2>Eigene Datei öffnen</h2>
+      <div class="row">
+        <label class="btn" for="file" style="display:inline-flex;align-items:center">Datei öffnen</label>
+        <input id="file" type="file" multiple accept=".json,.stl,.obj,.glb,.gltf">
+        <button class="btn" id="flip" hidden>Um 90° kippen</button>
+
+      </div>
+      <p class="note">Neue Modelle legst du einfach in den Ordner „modelle“ im GitHub-Repo, dann erscheinen sie oben in der Auswahl. Webshooter-Pakete (.json) von Claude laufen mit allen Funktionen. Eigene Teile als STL, OBJ oder GLB, gern mehrere auf einmal (zum Beispiel jedes Teil einzeln aus Shapr3D exportiert): Dann gehen Explosion, Detailansicht und Ausblenden, aber kein Abzug. Du kannst Dateien auch aufs Bild ziehen.</p>
+    </div>
   </aside>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
