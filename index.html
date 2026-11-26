@@ -308,7 +308,11 @@ function select(id){sel=id;document.querySelectorAll('#list li').forEach(li=>li.
  for(const t of p.txt){const q=document.createElement('p');q.textContent=t;info.append(q)}update()}
 const ray=new THREE.Raycaster(),mv=new THREE.Vector2();let down=null;
 renderer.domElement.addEventListener('pointerdown',e=>down=[e.clientX,e.clientY]);
-renderer.domElement.addEventListener('pointerup',e=>{if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>5)return;
+let lastTap={t:0,x:0,y:0};
+renderer.domElement.addEventListener('pointerup',e=>{
+ if(down&&Math.hypot(e.clientX-down[0],e.clientY-down[1])<=8){const now=performance.now();
+  if(now-lastTap.t<500&&Math.hypot(e.clientX-lastTap.x,e.clientY-lastTap.y)<30){lastTap.t=0;const id=pick(e);if(id){openDetail(id);down=null;return}}
+  lastTap={t:now,x:e.clientX,y:e.clientY}}if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>5)return;
  const id=pick(e);if(id)select(id)});
 function pick(e){const r=renderer.domElement.getBoundingClientRect();mv.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);
  ray.setFromCamera(mv,cam);const hits=ray.intersectObjects(items.filter(i=>i.g.visible&&i.m.material.opacity>0.5).map(i=>i.m));
@@ -322,9 +326,12 @@ function go(pos,tgt,anim=true){
 function setView(v,anim=true){const tgt=detail?ctr.target.clone():(tween&&tween.tt?tween.tt.clone():ctr.target.clone());
  const r=detail?cam.position.distanceTo(ctr.target):homeDist*fit();
  go(tgt.clone().add(V(...VIEWS[v]).normalize().multiplyScalar(r)),tgt,anim)}
-function frame(it,anim=true){const b=new THREE.Box3().setFromObject(it.g);const c=b.getCenter(V(0,0,0));const sz=b.getSize(V(0,0,0)).length();
- const dir=cam.position.clone().sub(ctr.target).normalize();
- if(anim)go(c.clone().add(dir.multiplyScalar(Math.max(sz*1.7,40))),c);else{ctr.target.copy(c)}}
+function frame(it,anim=true){scene.updateMatrixWorld(true);
+ const b=new THREE.Box3().setFromObject(it.m);const sph=b.getBoundingSphere(new THREE.Sphere());const c=sph.center;
+ const fv=cam.fov*Math.PI/180,fh=2*Math.atan(Math.tan(fv/2)*cam.aspect);
+ const dist=Math.max(sph.radius/Math.sin(Math.min(fv,fh)/2)*1.15,30);
+ const dir=(tween?tween.to.clone().sub(tween.tt):cam.position.clone().sub(ctr.target)).normalize();
+ if(anim)go(c.clone().add(dir.multiplyScalar(dist)),c.clone());else if(!tween){const d=cam.position.clone().sub(ctr.target);ctr.target.copy(c);cam.position.copy(c.clone().add(d))}}
 function openDetail(id){const it=items.find(i=>i.part===id);if(!it)return;detail=it;select(id);
  document.getElementById('back').hidden=false;update();frame(it)}
 function closeDetail(){if(!detail)return;detail=null;document.getElementById('back').hidden=true;update();
@@ -332,7 +339,7 @@ function closeDetail(){if(!detail)return;detail=null;document.getElementById('ba
 document.getElementById('back').onclick=closeDetail;
 document.getElementById('detail').onclick=()=>sel&&openDetail(sel);
 addEventListener('keydown',e=>{if(e.key==='Escape')closeDetail()});
-renderer.domElement.addEventListener('dblclick',e=>{const id=pick(e);if(id)openDetail(id)});
+renderer.domElement.addEventListener('dblclick',e=>{if(detail)return;const id=pick(e);if(id)openDetail(id)});
 document.querySelectorAll('.views button').forEach(b=>b.onclick=()=>setView(b.dataset.v));
 
 // ---------- Sprühnetz ----------
