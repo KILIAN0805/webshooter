@@ -204,7 +204,7 @@ function afterLoad(label,first,custom){
  document.getElementById('srcNote').textContent='Angezeigt: '+label+'.';
  document.getElementById('pressCtl').hidden=!K;document.getElementById('flip').hidden=!custom;
 
- prEl.value=0;exEl.value=0;buildList();select(first);ctr.target.copy(HOME);setView('iso',false);update()}
+ prEl.value=0;exEl.value=0;buildList();select(first);update();setView('iso',false)}
 const PAL=[0xf0702a,0x8d939c,0x3d6fd8,0x2e9e6b,0xd8b23d,0xb0506d,0x5ab4c4,0xcfd4db];
 function loadMeshes(list,label){clearAll();K=null;
  PARTS=list.map((m,i)=>({id:'f'+i,grp:'E',name:m.name,count:'1×',col:PAL[i%PAL.length],ord:(i%5)*0.6,txt:['Importiert aus '+m.file+'.'],print:'–'}));
@@ -289,8 +289,8 @@ function update(){if(!items.length)return;
   it.m.material.emissive.setHex(it.part===sel&&!isolate&&!detail?0x3a1a08:0);}
  if(detail&&!tween)frame(detail,false);
 }
-exEl.oninput=update;prEl.oninput=update;
-function setMode(m){mode=m;document.getElementById('mI').setAttribute('aria-pressed',m==='I');document.getElementById('mG').setAttribute('aria-pressed',m==='G');update()}
+exEl.oninput=()=>{userZoom=false;update()};prEl.oninput=update;
+function setMode(m){mode=m;userZoom=false;document.getElementById('mI').setAttribute('aria-pressed',m==='I');document.getElementById('mG').setAttribute('aria-pressed',m==='G');update()}
 document.getElementById('mI').onclick=()=>setMode('I');document.getElementById('mG').onclick=()=>setMode('G');
 document.getElementById('iso').onclick=e=>{isolate=!isolate;e.currentTarget.setAttribute('aria-pressed',isolate);update()};
 const GROUPS=[['E','Eigene Dateien','importiert'],['G','Gehäuse','drucken'],['M','Mechanik','drucken'],['K','Kleinteile','kaufen'],['P','Platzhalter','nicht drucken']];
@@ -319,23 +319,36 @@ function pick(e){const r=renderer.domElement.getBoundingClientRect();mv.set((e.c
  return hits.length?hits[0].object.userData.part:null}
 const VIEWS={iso:[-0.75,0.55,1],side:[0,0.05,1],front:[1,0.25,0.12],top:[0.001,1,0.001],bottom:[-0.3,-1,0.5]};
 let tween=null;
-let HOME=V(-25,8,0),homeDist=470;const fit=()=>Math.max(1,1.3/cam.aspect);
+let HOME=V(-25,8,0),homeDist=470;const fit=()=>1;
+// ---------- Kamera: immer mittig, passend gezoomt ----------
+let userZoom=false;
+function sphereOf(list){scene.updateMatrixWorld(true);const bx=new THREE.Box3();
+ for(const it of list){if(!it.g.visible)continue;const g=it.m.geometry;if(!g.boundingSphere)g.computeBoundingSphere();
+  const sp2=g.boundingSphere.clone().applyMatrix4(it.m.matrixWorld);
+  bx.expandByPoint(sp2.center.clone().addScalar(sp2.radius));bx.expandByPoint(sp2.center.clone().addScalar(-sp2.radius))}
+ if(bx.isEmpty())return null;const s3=bx.getBoundingSphere(new THREE.Sphere());s3.radius*=(list.length===1?0.62:0.74);return s3}
+function fitDist(r){const fv=cam.fov*Math.PI/180,fh=2*Math.atan(Math.tan(fv/2)*cam.aspect);return Math.max(r/Math.sin(Math.min(fv,fh)/2)*1.08,22)}
+function shown(){return detail?[detail]:items.filter(i=>i.g.visible)}
 function go(pos,tgt,anim=true){
  if(!anim||matchMedia('(prefers-reduced-motion: reduce)').matches){cam.position.copy(pos);ctr.target.copy(tgt);tween=null;return}
  tween={from:cam.position.clone(),to:pos,tf:ctr.target.clone(),tt:tgt,t:0}}
-function setView(v,anim=true){const tgt=detail?ctr.target.clone():(tween&&tween.tt?tween.tt.clone():ctr.target.clone());
- const r=detail?cam.position.distanceTo(ctr.target):homeDist*fit();
- go(tgt.clone().add(V(...VIEWS[v]).normalize().multiplyScalar(r)),tgt,anim)}
-function frame(it,anim=true){scene.updateMatrixWorld(true);
- const b=new THREE.Box3().setFromObject(it.m);const sph=b.getBoundingSphere(new THREE.Sphere());const c=sph.center;
- const fv=cam.fov*Math.PI/180,fh=2*Math.atan(Math.tan(fv/2)*cam.aspect);
- const dist=Math.max(sph.radius/Math.sin(Math.min(fv,fh)/2)*1.15,30);
- const dir=(tween?tween.to.clone().sub(tween.tt):cam.position.clone().sub(ctr.target)).normalize();
- if(anim)go(c.clone().add(dir.multiplyScalar(dist)),c.clone());else if(!tween){const d=cam.position.clone().sub(ctr.target);ctr.target.copy(c);cam.position.copy(c.clone().add(d))}}
+function aim(dir,anim=true){const sp3=sphereOf(shown());if(!sp3)return;userZoom=false;
+ go(sp3.center.clone().add(dir.clone().normalize().multiplyScalar(fitDist(sp3.radius))),sp3.center.clone(),anim)}
+function curDir(){return(tween?tween.to.clone().sub(tween.tt):cam.position.clone().sub(ctr.target)).normalize()}
+function setView(v,anim=true){aim(V(...VIEWS[v]),anim)}
+function frame(it,anim=true){aim(curDir(),anim)}
 function openDetail(id){const it=items.find(i=>i.part===id);if(!it)return;detail=it;select(id);
- document.getElementById('back').hidden=false;update();frame(it)}
-function closeDetail(){if(!detail)return;detail=null;document.getElementById('back').hidden=true;update();
- const dir=cam.position.clone().sub(ctr.target).normalize();go(HOME.clone().add(dir.multiplyScalar(homeDist*fit())),HOME.clone())}
+ document.getElementById('back').hidden=false;update();aim(curDir())}
+function closeDetail(){if(!detail)return;detail=null;document.getElementById('back').hidden=true;update();aim(curDir())}
+function autoFit(){if(tween||!items.length)return;const sp3=sphereOf(shown());if(!sp3)return;
+ const d=cam.position.clone().sub(ctr.target);let dist=d.length();const dir=d.normalize();
+ ctr.target.lerp(sp3.center,0.12);if(!userZoom)dist+= (fitDist(sp3.radius)-dist)*0.12;
+ cam.position.copy(ctr.target.clone().add(dir.multiplyScalar(dist)))}
+const ptrs=new Set();
+renderer.domElement.addEventListener('wheel',()=>{userZoom=true},{passive:true});
+renderer.domElement.addEventListener('pointerdown',e=>{ptrs.add(e.pointerId);if(ptrs.size>1)userZoom=true});
+addEventListener('pointerup',e=>ptrs.delete(e.pointerId));addEventListener('pointercancel',e=>ptrs.delete(e.pointerId));
+ctr.enablePan=false;
 document.getElementById('back').onclick=closeDetail;
 document.getElementById('detail').onclick=()=>sel&&openDetail(sel);
 addEventListener('keydown',e=>{if(e.key==='Escape')closeDetail()});
@@ -389,7 +402,7 @@ function loop(){requestAnimationFrame(loop);
  if(play){play.t+=1/60;const T=play.t;let ex,pr;
   if(detail)closeDetail();if(!K&&T>=5){play=null}if(T<2){ex=T/2;pr=0}else if(T<3){ex=1;pr=0}else if(T<5){ex=1-(T-3)/2;pr=0}else if(T<6.5){ex=0;pr=Math.sin((T-5)/1.5*Math.PI)}else{ex=0;pr=0;play=null}
   exEl.value=Math.round(ex*100);prEl.value=Math.round(Math.max(0,pr)*100);update()}
- if(items.length)sprayStep(1/60);ctr.update();renderer.render(scene,cam)}
+ if(items.length)sprayStep(1/60);autoFit();ctr.update();renderer.render(scene,cam)}
 resize();loop();
 }
 </script>
