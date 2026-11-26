@@ -130,7 +130,7 @@ button:focus-visible,input:focus-visible,li:focus-visible{outline:2px solid var(
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
 {
-const ORA=0xf0702a, GRA=0x2b2e34, MECH=0x8d939c, STEEL=0xcfd4db, BOT=0xdfe8f1;
+const ORA=0xf0702a, GRA=0x2b2e34, MECH=0x8d939c, STEEL=0xcfd4db, BOT=0xdfe8f1, PINC=0xe6c65a;
 const BASE=[
  {id:'haube',grp:'G',name:'Haube',count:'1×',col:ORA,ord:0,txt:['Wird nach oben abgezogen und rastet an vier Nasen ein, die von außen nicht zu sehen sind.','Zwei Stege innen drücken Sprühkopf und Flasche nach unten.'],print:'PETG, auf der Seite liegend, mit Stützen'},
  {id:'halter',grp:'G',name:'Oberschale / Halterung',count:'1×',col:GRA,ord:9,txt:['Obere Hälfte der Armschale. Trägt Flaschenbett, Sprühkopf-Tasche, Achse des Abzugs und die Laschen-Kanäle.'],print:'PETG, aufrecht (Handgelenk-Ende unten), Stützen im Flaschenbett'},
@@ -143,9 +143,9 @@ const BASE=[
  {id:'sachse',grp:'K',name:'Schraube Achse M3×8',count:'2×',col:STEEL,ord:4,txt:['Linsenkopf (ISO 7380). Achse des Abzugs, schneidet sich ins Plastik der Halterung.'],print:'Kaufteil'},
  {id:'svorn',grp:'K',name:'Schraube Lasche vorne M3×5',count:'2×',col:STEEL,ord:4,txt:['Linsenkopf. Durch die Wange in die Lasche.'],print:'Kaufteil'},
  {id:'shint',grp:'K',name:'Schraube Lasche hinten M3×8',count:'2×',col:STEEL,ord:4,txt:['Linsenkopf. Durch die Lasche in den Schieber.'],print:'Kaufteil'},
- {id:'pachse',grp:'K',name:'Steckstift Achse',count:'2×',col:MECH,ord:4,txt:['Gedruckter Stift statt Schraube: Schaft 3,0 mm, 8 mm lang, Kopf 5,7 mm.','Dreht sich frei im Abzug und sitzt stramm (Presssitz) in der Halterung. Die Haube liegt direkt vor dem Kopf, dadurch kann er nicht herausrutschen.'],print:'PETG, liegend auf der flachen Seite'},
- {id:'pvorn',grp:'K',name:'Steckstift Lasche vorne',count:'2×',col:MECH,ord:4,txt:['Gedruckter Stift, 3,0 mm, 5 mm lang. Durch die Wange des Abzugs, stramm in die Lasche.'],print:'PETG, liegend auf der flachen Seite'},
- {id:'phint',grp:'K',name:'Steckstift Lasche hinten',count:'2×',col:MECH,ord:4,txt:['Gedruckter Stift, 3,0 mm, 8 mm lang. Durch die Lasche, stramm in den Schieber.'],print:'PETG, liegend auf der flachen Seite'},
+ {id:'pachse',grp:'K',name:'Steckstift Achse',count:'2×',col:PINC,ord:4,txt:['Gedruckter Stift statt Schraube: Schaft 3,0 mm, 8 mm lang, Kopf 5,7 mm.','Dreht sich frei im Abzug und sitzt stramm (Presssitz) in der Halterung. Die Haube liegt direkt vor dem Kopf, dadurch kann er nicht herausrutschen.'],print:'PETG, liegend auf der flachen Seite'},
+ {id:'pvorn',grp:'K',name:'Steckstift Lasche vorne',count:'2×',col:PINC,ord:4,txt:['Gedruckter Stift, 3,0 mm, 5 mm lang. Durch die Wange des Abzugs, stramm in die Lasche.'],print:'PETG, liegend auf der flachen Seite'},
+ {id:'phint',grp:'K',name:'Steckstift Lasche hinten',count:'2×',col:PINC,ord:4,txt:['Gedruckter Stift, 3,0 mm, 8 mm lang. Durch die Lasche, stramm in den Schieber.'],print:'PETG, liegend auf der flachen Seite'},
  {id:'pin',grp:'K',name:'Scharnierstift (Filament)',count:'1×',col:STEEL,ord:4,txt:['Ein Stück normales 3D-Drucker-Filament, kein Metall: 1,75 mm dick, ca. 11 cm lang (PLA oder PETG).','Durch alle Scharnierglieder der Unterschale schieben. Damit er nicht rausrutscht, beide Enden kurz mit einem Lötkolben oder Feuerzeug anwärmen und etwas platt drücken.'],print:'Filament 1,75 mm, ca. 11 cm'}];
 let PARTS=BASE.slice();let byId=Object.fromEntries(PARTS.map(p=>[p.id,p]));
 const stage=document.getElementById('stage');
@@ -299,7 +299,7 @@ function buildList(){const box=document.getElementById('list');
   if(g==='K')h=ps.some(p=>p.id==='pachse')?'drucken + Filament':'kaufen + Filament';
   return `<div class="grp"><h4>${t}<span>${h}</span></h4><ul>`+ps.map(p=>`<li tabindex="0" data-id="${p.id}"><span class="dot" style="background:#${p.col.toString(16).padStart(6,'0')}"></span><span class="nm">${p.name}</span><span class="ct">${p.count}</span><button aria-label="Ein- oder ausblenden">◐</button></li>`).join('')+'</ul></div>'}).join('');
  box.querySelectorAll('li').forEach(li=>{const id=li.dataset.id;
-  li.onclick=()=>select(id);li.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select(id)}};
+  let lt=0;li.onclick=()=>{const n=performance.now();if(n-lt<500){lt=0;openDetail(id)}else{lt=n;select(id)}};li.ondblclick=e=>{e.preventDefault()};li.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select(id)}};
   li.querySelector('button').onclick=e=>{e.stopPropagation();hidden.has(id)?hidden.delete(id):hidden.add(id);li.classList.toggle('off',hidden.has(id));update()};});}
 function select(id){sel=id;document.querySelectorAll('#list li').forEach(li=>li.classList.toggle('sel',li.dataset.id===id));
  const p=byId[id];const info=document.getElementById('info');info.innerHTML='';
